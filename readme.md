@@ -59,7 +59,7 @@ $ cargo new snake_game --bin
 [package]
 name = "snake_game"
 version = "0.1.0"
-authors = ["Hiroya_W <e8239@g.maizuru-ct.ac.jp>"]
+authors = ["Hiroya_W <mail@address>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -96,9 +96,9 @@ cargo doc --open
 先程の依存関係のインストールでは、クレートがインストールされます。
 
 このクレートを使用することを**Rust 2015**では記述する必要がありました。
+ので、こう書きます。
 
 ```rust
-main.rs
 extern crate glutin_window;
 extern crate graphics;
 extern crate opengl_graphics;
