@@ -5,6 +5,12 @@
 翻訳しながら、自分が勉強したことをまとめていこうと思います。
 [Making a Snake Game in Rust](https://www.youtube.com/watch?v=HCwMb0KslX8)
 
+この記事での完成形は、こんな感じ。この記事では、スネークが動くところまで実装します。
+
+<img src="/home/hiroya/Pictures/ScreenShots/Snake Game_065.png" alt="Snake Game_065" style="zoom:50%;" />
+
+
+
 **Rust初心者が書く記事ですので、間違ったことを書いてしまっていた場合はご指摘いただけると幸いです。よろしくおねがいします。**
 
 [200行のRustでスネークゲーム](https://qiita.com/elpnt/items/fb948105eeb41cb3629b)を作られた方も。
@@ -756,3 +762,145 @@ enum Direction {
 ```
 
 `derive`で自動的に実装できます。とても簡単でした...。
+
+## ついてくる尻尾を追加する
+
+ついてくる尻尾を追加します。
+
+そのために、標準ライブラリの`LinkedList`を使用します。
+
+```rust
+use std::collections::LinkedList;
+```
+
+各尻尾のX座標,Y座標をペアとして持つ`LinkedList`にスネークを修正していきます。
+
+```rust
+struct Snake {
+    body: LinkedList<(i32,i32)>,
+    dir: Direction,
+}
+```
+
+そうすると、スネークの移動と、レンダリングの部分のコードを書き変えなければなりません。
+
+移動するには、新しいスネークの頭、もしくは、リストの先頭をクローンします。先程と同様の理由で、`clone`しなければならないことに注意してください。
+
+方向に基づいて頭の位置を更新し、`LinkedList`の先頭に追加し、最後の要素を取り除きます。
+
+移動させるというよりかは、進行方向に新しい頭を置き、尻尾を1個消す、みたいなイメージ。
+
+```rust
+impl Snake {
+    fn render(&self, gl: &mut GlGraphics, args: &RenderArgs) {
+		// ...
+	}
+
+    fn update(&mut self) {
+        let mut new_head = (*self.body.front().expect("Snake has no body")).clone();
+        match self.dir {
+            Direction::Left => new_head.0 -= 1,
+            Direction::Right => new_head.0 += 1,
+            Direction::Up => new_head.1-= 1,
+            Direction::Down => new_head.1 += 1,
+        }
+
+        self.body.push_front(new_head);
+        self.body.pop_back().unwrap();
+    }
+}
+```
+
+これをレンダリングしていきます。
+
+レンダリングは各尻尾の部分に対して行いますが、本質的には全て同じことを行います。
+
+まず、`Snake.body`を`iter`を使ってイテレータを回します。それぞれの要素において、`map`を使って、座標のペアを`x`と`y`の変数にマッピングして正方形を作成したものをベクトル型に格納していきます。
+
+次に、作成したベクトル型の`squares`に対して、`into_iter`を使って、イテレータを回し、それぞれの正方形を描画していきます。
+
+イテレータには3種類あり、
+
+- `iter(&self)` : 各要素を`&T`型で返すイテレータ
+- `iter_mut(&mut self)` : 各要素を`&mut T`型で返すイテレータ
+- `into_iter(self)` : 各要素を`T`型で返すイテレータ
+
+`into_iter`メソッドは引数が`self`で、コレクションの所有権が移動します。なので、一度呼ぶとそのコレクションにはアクセスできなくなります。
+
+参照の場合は、`iter`メソッド、ですね。
+
+```rust
+impl Snake {
+    fn render(&self, gl: &mut GlGraphics, args: &RenderArgs) {
+        use graphics;
+
+        let RED: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
+
+        let squares: Vec<graphics::types::Rectangle> = self
+            .body
+            .iter()
+            .map(|&(x, y)| graphics::rectangle::square((x * 20) as f64, (y * 20) as f64, 20_f64))
+            .collect();
+
+        gl.draw(args.viewport(), |c, gl| {
+            let transform = c.transform;
+
+            squares
+                .into_iter()
+                .for_each(|square| graphics::rectangle(RED, square, transform, gl));
+        });
+    }
+
+    fn update(&mut self) {
+		// ...
+    }
+}
+
+```
+
+main関数の`snake`インスタンスでの初期化も修正しなければなりません。
+
+`from_iter`メソッドを使って、ベクトル型から`LinkedList`を作成します。
+
+`FromIterator`をインポートします。
+
+```rust
+use std::iter::FromIterator;
+```
+
+スネークの初期位置は、`(0,0)`と``(0,1)`となります。
+
+```rust
+    let mut app = App {
+        gl: GlGraphics::new(opengl),
+        snake: Snake {
+            body: LinkedList::from_iter((vec![(0, 0), (0, 1)]).into_iter()),
+            dir: Direction::Right,
+        },
+    };
+```
+
+# 実行してみる
+
+<img src="/home/hiroya/Pictures/ScreenShots/Snake Game_065.png" alt="Snake Game_065" style="zoom:50%;" />
+
+静止画でわかりにくくてごめんなさい。
+
+いつかGIF画像に置き換えます。
+
+こんな感じに、キー入力で移動、尻尾がついてくるところまで実装できました。
+
+
+
+# 一旦ここまで
+
+Youtubeでの解説はここまでで終わりでした。
+
+ので、この記事も一旦ここまで、としたいと思います。
+
+まだ移動までしか出来てなくて、ここからゲームらしさが追加されていくことになるので楽しみですね。
+
+完成形のソースコードへのリンクはYoutubeの概要欄に記載されているので、次回はそれを参考に完成させたいと思います。
+
+ここまで書いてみて、Rust特有の仕様、書き方を体験しつつ、ゲーム制作ができるいい題材だったのではないかな、と感じています。
+
