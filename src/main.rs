@@ -28,6 +28,10 @@ impl App {
 
         self.snake.render(&mut self.gl, args);
     }
+
+    fn update(&mut self) {
+        self.snake.update();
+    }
 }
 
 struct Snake {
@@ -51,6 +55,15 @@ impl Snake {
             graphics::rectangle(RED, square, transform, gl);
         });
     }
+
+    fn update(&mut self) {
+        match self.dir {
+            Direction::Left => self.pos_x -= 1,
+            Direction::Right => self.pos_x += 1,
+            Direction::Up => self.pos_y -= 1,
+            Direction::Down => self.pos_y += 1,
+        }
+    }
 }
 
 fn main() {
@@ -64,8 +77,8 @@ fn main() {
     let mut app = App {
         gl: GlGraphics::new(opengl),
         snake: Snake {
-            pos_x: 50,
-            pos_y: 100,
+            pos_x: 0,
+            pos_y: 0,
             dir: Direction::Right,
         },
     };
@@ -74,6 +87,9 @@ fn main() {
     while let Some(e) = events.next(&mut window) {
         if let Some(args) = e.render_args() {
             app.render(&args);
+        }
+        if let Some(args) = e.update_args() {
+            app.update();
         }
     }
 }
