@@ -1,9 +1,13 @@
 use glutin_window::GlutinWindow;
 use opengl_graphics::{GlGraphics, OpenGL};
 use piston::event_loop::{EventLoop, EventSettings, Events};
-use piston::input::{RenderArgs, RenderEvent, UpdateArgs, UpdateEvent};
+use piston::input::{
+    keyboard::Key, Button, ButtonEvent, ButtonState, RenderArgs, RenderEvent, UpdateArgs,
+    UpdateEvent,
+};
 use piston::window::WindowSettings;
 
+#[derive(Clone, PartialEq)]
 enum Direction {
     Right,
     Left,
@@ -31,6 +35,18 @@ impl App {
 
     fn update(&mut self) {
         self.snake.update();
+    }
+
+    fn pressed(&mut self, btn: &Button) {
+        let last_direction = self.snake.dir.clone();
+
+        self.snake.dir = match btn {
+            &Button::Keyboard(Key::Up) if last_direction != Direction::Down => Direction::Up,
+            &Button::Keyboard(Key::Down) if last_direction != Direction::Up => Direction::Down,
+            &Button::Keyboard(Key::Left) if last_direction != Direction::Right => Direction::Left,
+            &Button::Keyboard(Key::Right) if last_direction != Direction::Left => Direction::Right,
+            _ => last_direction,
+        }
     }
 }
 
@@ -90,6 +106,11 @@ fn main() {
         }
         if let Some(args) = e.update_args() {
             app.update();
+        }
+        if let Some(args) = e.button_args() {
+            if args.state == ButtonState::Press {
+                app.pressed(&args.button);
+            }
         }
     }
 }

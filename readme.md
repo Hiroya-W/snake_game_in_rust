@@ -685,3 +685,74 @@ use piston::event_loop::{EventSettings, Events,EventLoop};
     let mut events = Events::new(EventSettings::new()).ups(8);
 ```
 
+これで実行してみれば、いい感じに移動するようになっていると思います。
+
+
+
+## キー入力で方向を切り替える
+
+キー入力のイベントを使用するために、名前空間を読み込みます。
+
+```rust
+use piston::input::{
+    keyboard::Key, Button, ButtonEvent, ButtonState, RenderArgs, RenderEvent, UpdateArgs,
+    UpdateEvent,
+};
+```
+
+キー入力があった時に、`pressed`メソッドを呼び出すようにします。
+
+```rust
+        if let Some(args) = e.button_args() {
+            if args.state == ButtonState::Press{
+                app.pressed(&args.button);
+            }
+        }
+```
+
+`pressed`メソッドを実装します。
+
+`last_direction`に所有権を渡すわけではないので、`clone`で値をコピーします。
+
+入力されたキーをパターンマッチで判断し、更にパターンに条件(ガード)をつけます。
+
+こうすることで、スネークの方向転換に制限をかけます。
+
+```rust
+impl App {
+    fn render(&mut self, args: &RenderArgs) {
+        // ...
+    }
+    fn update(&mut self) {
+        // ...
+    }
+
+    fn pressed(&mut self, btn: &Button) {
+        let last_direction = self.snake.dir.clone();
+
+        self.snake.dir = match btn {
+            &Button::Keyboard(Key::Up) if last_direction != Direction::Down => Direction::Up,
+            &Button::Keyboard(Key::Down) if last_direction != Direction::Up => Direction::Down,
+            &Button::Keyboard(Key::Left) if last_direction != Direction::Right => Direction::Left,
+            &Button::Keyboard(Key::Right) if last_direction != Direction::Left => Direction::Right,
+            _ => last_direction,
+        }
+    }
+}
+```
+
+でも、これにはバグがあり、コンパイラは`Direction`を比較しようとするとエラーを吐きます。
+
+そもそも、それらが等しいという概念を実装していないからです。
+
+```rust
+#[derive(Clone, PartialEq)]
+enum Direction {
+    Right,
+    Left,
+    Up,
+    Down,
+}
+```
+
+`derive`で自動的に実装できます。とても簡単でした...。
