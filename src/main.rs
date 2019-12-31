@@ -1,6 +1,6 @@
 use glutin_window::GlutinWindow;
 use opengl_graphics::{GlGraphics, OpenGL};
-use piston::event_loop::{EventSettings, Events};
+use piston::event_loop::{EventLoop, EventSettings, Events};
 use piston::input::{RenderArgs, RenderEvent, UpdateArgs, UpdateEvent};
 use piston::window::WindowSettings;
 
@@ -83,7 +83,7 @@ fn main() {
         },
     };
 
-    let mut events = Events::new(EventSettings::new());
+    let mut events = Events::new(EventSettings::new()).ups(8);
     while let Some(e) = events.next(&mut window) {
         if let Some(args) = e.render_args() {
             app.render(&args);

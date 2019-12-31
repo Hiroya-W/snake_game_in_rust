@@ -667,3 +667,21 @@ impl Snake {
 
 ## とりあえず実行してみる
 
+ものすごい速さで右側に移動するのが見えたでしょうか...。
+
+## イベントの更新回数を調節する
+
+`ups`メソッドを使って1秒あたり8回更新されるようにします。
+
+`EventLoop`の名前空間を読み込んで、
+
+```rust
+use piston::event_loop::{EventSettings, Events,EventLoop};
+```
+
+`ups`メソッドを呼び出します。
+
+```rust
+    let mut events = Events::new(EventSettings::new()).ups(8);
+```
+
